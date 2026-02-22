@@ -1,0 +1,48 @@
+# macOS / editor noise
+.DS_Store
+*.swp
+*.swo
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local env files
+.env
+.env.*
+!.env.example
+
+# Generated plots and analysis outputs
+plots/**/*.png
+plots/**/*.svg
+plots/**/*.pdf
+plots/**/*.html
+
+outputs/**/*.csv
+outputs/**/*.csv.gz
+outputs/**/*.parquet
+outputs/**/*.pkl
+outputs/**/*.html
+
+scripts/outputs/**/*.csv
+scripts/outputs/**/*.csv.gz
+scripts/outputs/**/*.parquet
+scripts/outputs/**/*.pkl
+scripts/outputs/**/*.html
+
+# Raw data dumps
+data/raw/**/*.csv
+data/raw/**/*.csv.gz
+data/raw/**/*.dta
+data/raw/**/*.parquet
+
+# Keep directory scaffolding
+!data/raw/**/.gitkeep
+!outputs/**/.gitkeep
+!scripts/outputs/**/.gitkeep
+!plots/.gitkeep
