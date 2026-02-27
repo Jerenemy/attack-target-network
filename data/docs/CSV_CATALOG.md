@@ -1,11 +1,14 @@
 # CSV Catalog and Lineage
 
-Last updated: 2026-02-22
+Last updated: 2026-02-27
 
 This document describes all CSV/CSV.GZ files currently in `analysis/`, including:
 - what each file is for,
 - how it was created (or where it came from),
 - what its entries/columns represent.
+
+Pointer:
+- For Week 3 target-definition changes and concrete Week 2 vs Week 3 examples, see `analysis/data/docs/WEEK3_TARGET_CLASSIFICATION_EXPLAINER.md`.
 
 ## 1) Inventory (all CSVs in repo)
 
