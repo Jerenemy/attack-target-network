@@ -43,6 +43,61 @@ LABEL_COLORS = {
 }
 
 
+def resolve_clicked_node(
+    click_data: dict | None,
+    figure: dict | None,
+) -> tuple[str, str] | None:
+    if not click_data or "points" not in click_data or not click_data["points"]:
+        return None
+
+    point = click_data["points"][0]
+    customdata = point.get("customdata")
+    if customdata and len(customdata) == 2:
+        return str(customdata[0]), str(customdata[1])
+
+    # Fallback: edge hover point may capture click near a large node.
+    # Resolve to nearest visible node if within a small layout-distance threshold.
+    if not figure:
+        return None
+    px = point.get("x")
+    py = point.get("y")
+    if px is None or py is None:
+        return None
+
+    node_points: list[tuple[float, float, str, str]] = []
+    for trace in figure.get("data", []):
+        if trace.get("name") not in {"Sponsors", "Targets"}:
+            continue
+        xs = trace.get("x", [])
+        ys = trace.get("y", [])
+        cds = trace.get("customdata", [])
+        for x, y, cd in zip(xs, ys, cds):
+            if not cd or len(cd) != 2:
+                continue
+            node_points.append((float(x), float(y), str(cd[0]), str(cd[1])))
+
+    if not node_points:
+        return None
+
+    x_vals = [x for x, _, _, _ in node_points]
+    y_vals = [y for _, y, _, _ in node_points]
+    span = max(max(x_vals) - min(x_vals), max(y_vals) - min(y_vals), 1e-9)
+    threshold = 0.06 * span
+    threshold_sq = threshold * threshold
+
+    best = None
+    best_dist_sq = float("inf")
+    for x, y, name, ntype in node_points:
+        d2 = (x - float(px)) ** 2 + (y - float(py)) ** 2
+        if d2 < best_dist_sq:
+            best_dist_sq = d2
+            best = (name, ntype)
+
+    if best is None or best_dist_sq > threshold_sq:
+        return None
+    return best
+
+
 def mode(series: pd.Series, default: str = "UNKNOWN") -> str:
     s = series.dropna().astype(str)
     if s.empty:
@@ -355,7 +410,7 @@ def build_figure(
         text=edge_hover_text,
         showlegend=False,
         marker=dict(
-            size=10,
+            size=5,
             color="rgba(0,0,0,0.001)",
             line=dict(width=0),
         ),
@@ -618,15 +673,13 @@ app.layout = html.Div(
     Input("attack-target-graph", "clickData"),
     State("interaction-mode", "value"),
     State("selected-seeds", "data"),
+    State("attack-target-graph", "figure"),
 )
-def update_selected_seeds(click_data, interaction_mode, selected_seeds):
-    if not click_data or "points" not in click_data or not click_data["points"]:
+def update_selected_seeds(click_data, interaction_mode, selected_seeds, figure):
+    clicked = resolve_clicked_node(click_data, figure)
+    if clicked is None:
         return selected_seeds or []
-    customdata = click_data["points"][0].get("customdata")
-    if not customdata or len(customdata) != 2:
-        return selected_seeds or []
-
-    node_name, node_type = customdata[0], customdata[1]
+    node_name, node_type = clicked
     selected_seeds = list(selected_seeds or [])
 
     if interaction_mode == "accumulate":
