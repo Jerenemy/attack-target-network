@@ -27,6 +27,10 @@ Pointer:
 | `analysis/outputs/week2/entity_mentions_week2_labeled_v1.csv.gz` | 127,464 | 22 | Week 2 derived mention-level target inference table |
 | `analysis/outputs/week2/attack_target_edges_v1.csv` | 5,939 | 10 | Week 2 derived sponsor->target edge list |
 | `analysis/outputs/week2/attack_target_nodes_v1.csv` | 9,744 | 9 | Week 2 derived target node table |
+| `analysis/outputs/week3/entity_mentions_week3_cleaned_v1_1.csv.gz` | 127,464 | 27 | Week 3 derived conservative cleaned mention table |
+| `analysis/outputs/week3/attack_target_edges_v1_1.csv` | 570 | 9 | Week 3 derived conservative sponsor->target edge list |
+| `analysis/outputs/week3/attack_target_nodes_v1_1.csv` | 346 | 8 | Week 3 derived conservative target node table |
+| `analysis/outputs/week3/cleaning_metrics_v1_1.csv` | 26 | 3 | Week 3 derived QA/metrics log table |
 | `analysis/scripts/outputs/week2/entity_mentions_week2_labeled_v1.csv.gz` | 127,464 | 22 | Duplicate Week 2 mentions artifact |
 | `analysis/scripts/outputs/week2/attack_target_edges_v1.csv` | 5,939 | 10 | Duplicate Week 2 edge artifact |
 | `analysis/scripts/outputs/week2/attack_target_nodes_v1.csv` | 9,744 | 9 | Duplicate Week 2 node artifact |
@@ -64,6 +68,18 @@ Main steps:
 4. Compute target signals: `negative_tone`, attack-term context, and self-mention exclusion.
 5. Assign `target_confidence` (`high`, `medium`, `low`) and `is_target`.
 6. Aggregate to sponsor->target edges and entity-level nodes.
+
+### Week 3 derived outputs (`analysis/outputs/week3/...`)
+Created by:
+- `analysis/scripts/week3_clean_attack_target_v1_1.py`
+
+Main steps:
+1. Load Week 2 labeled mentions and reviewed alias map.
+2. Recompute deterministic normalized canonical values for matching.
+3. Apply conservative entity-quality filters with explicit `drop_reason`.
+4. Apply label-consistency guard (`label_conflict`) for ambiguous canonical entities.
+5. Reclassify targets to strict `high`-only rule and create `is_target_v1_1`.
+6. Rebuild filtered edges/nodes (`v1_1`) and write stage metrics to `cleaning_metrics_v1_1.csv`.
 
 ## 3) Raw CSV details
 
@@ -308,7 +324,82 @@ Entries (columns):
 Key entry distributions:
 - `label_mode`: `PERSON=4,921`, `ORG=3,777`, `GPE=1,046`.
 
-## 6) Duplicate Week 2 CSVs under `analysis/scripts/outputs/week2/`
+## 6) Week 3 output CSV details
+
+## `analysis/outputs/week3/entity_mentions_week3_cleaned_v1_1.csv.gz`
+Purpose:
+- Conservative Week 3 mention-level table with explicit row-level quality decisions.
+
+How created:
+- `week3_clean_attack_target_v1_1.py`:
+  - canonical normalization + alias lock application
+  - entity-quality/drop filtering
+  - strict target reclassification
+  - export to gzip CSV
+
+Entries (columns):
+- All Week 2 mention columns are retained.
+- Added Week 3 fields:
+  - `canonical_entity_v1_1`
+  - `drop_reason`
+  - `entity_quality_flag` (`keep`/`drop`)
+  - `target_confidence_v1_1` (`high`/`low`)
+  - `is_target_v1_1` (boolean)
+
+Key entry distributions:
+- `entity_quality_flag`: `keep=100,199`, `drop=27,265`.
+- `target_confidence_v1_1`: `high=10,703`, `low=116,761`.
+- `is_target_v1_1`: `True=10,703`, `False=116,761`.
+- Top `drop_reason`: `single_token_person_ambiguous=14,243`, `generic_token_stoplist=8,557`, `label_conflict=2,752`.
+
+## `analysis/outputs/week3/attack_target_edges_v1_1.csv`
+Purpose:
+- Conservative sponsor->target edge list built only from Week 3 strict targets.
+
+How created:
+- Group kept mention rows where `is_target_v1_1=True`.
+- Keep edges with `mention_count >= 2` and `ad_count >= 2`.
+
+Entries (columns):
+- `sponsor_name`, `canonical_entity_v1_1`, `mention_count`, `ad_count`, `platform_count`, `party_mode`, `tone_mode`, `high_confidence_mentions`, `build_version`.
+
+Key entry distributions:
+- `party_mode`: `REP=332`, `DEM=213`, `OTHER=24`, `IND=1`.
+- `tone_mode`: `NEGATIVE=322`, `CONTRAST=248`.
+- `build_version`: `v1.1_conservative` for all rows.
+
+## `analysis/outputs/week3/attack_target_nodes_v1_1.csv`
+Purpose:
+- Conservative target-node summary tied to retained Week 3 edge universe.
+
+How created:
+- Group retained Week 3 target mentions by `canonical_entity_v1_1`.
+
+Entries (columns):
+- `canonical_entity_v1_1`, `mention_count`, `ad_count`, `sponsor_count`, `platform_count`, `label_mode`, `high_confidence_mentions`, `build_version`.
+
+Key entry distributions:
+- `label_mode`: `PERSON=235`, `ORG=111`.
+- `build_version`: `v1.1_conservative` for all rows.
+
+## `analysis/outputs/week3/cleaning_metrics_v1_1.csv`
+Purpose:
+- Structured QA and regression metrics from the Week 3 cleaning pipeline.
+
+How created:
+- Appended during each major stage in `week3_clean_attack_target_v1_1.py`.
+
+Entries (columns):
+- `stage`: one of `baseline`, `post_filter_mentions`, `post_target_reclass`, `final_edges_nodes`.
+- `metric`: metric key name.
+- `value`: string/numeric metric value.
+
+Examples:
+- `baseline,is_target_rate_v1,0.6067281742295864`
+- `post_target_reclass,target_rate_v1_1,0.083968806878805`
+- `final_edges_nodes,edge_count_v1_1,570`
+
+## 7) Duplicate Week 2 CSVs under `analysis/scripts/outputs/week2/`
 
 Files:
 - `analysis/scripts/outputs/week2/entity_mentions_week2_labeled_v1.csv.gz`
@@ -326,12 +417,13 @@ Entry compatibility with canonical outputs:
 - `attack_target_nodes_v1.csv`: identical to `analysis/outputs/week2/attack_target_nodes_v1.csv`.
 - `entity_mentions_week2_labeled_v1.csv.gz`: decompressed CSV content identical to `analysis/outputs/week2/entity_mentions_week2_labeled_v1.csv.gz`.
 
-## 7) Practical usage guidance
+## 8) Practical usage guidance
 
 Use these as authoritative by stage:
 - Stage 0 (inputs): `analysis/data/raw/...`
 - Stage 1 (text/NER prep): `analysis/outputs/week1/harmonized_sample_week1.csv.gz`, `analysis/outputs/week1/entity_mentions_week1.csv.gz`
 - Stage 1.5 (manual canonicalization): `analysis/outputs/week1/entity_alias_map_v1.csv`
 - Stage 2 (network build): `analysis/outputs/week2/entity_mentions_week2_labeled_v1.csv.gz`, `analysis/outputs/week2/attack_target_edges_v1.csv`, `analysis/outputs/week2/attack_target_nodes_v1.csv`
+- Stage 3 (conservative cleaned build): `analysis/outputs/week3/entity_mentions_week3_cleaned_v1_1.csv.gz`, `analysis/outputs/week3/attack_target_edges_v1_1.csv`, `analysis/outputs/week3/attack_target_nodes_v1_1.csv`, `analysis/outputs/week3/cleaning_metrics_v1_1.csv`
 
-Unless you need historical reproducibility checks, prefer `analysis/outputs/week2/...` over `analysis/scripts/outputs/week2/...`.
+For authoritative outputs, use `analysis/outputs/week*/...` artifacts (Week 1/2/3) rather than script-local duplicates under `analysis/scripts/outputs/...`.

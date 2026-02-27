@@ -17,12 +17,13 @@ Define and implement a richer interactive graph experience for Week 3 so users c
 | Hover basics (mentions/ads/platforms) | Already implemented | `scripts/week3_build_attack_target_graph_interactive_v1_1.py` |
 | In-UI party filters for sponsors and targets | Implemented (new) | `apps/week3_attack_target_graph_dash.py` |
 | In-UI show/hide sponsors and targets | Implemented (new) | `apps/week3_attack_target_graph_dash.py` |
-| Party color mode (REP red, DEM blue) | Implemented (new) | `apps/week3_attack_target_graph_dash.py` |
+| Party color mode (sponsors standard, targets configured with flipped DEM/REP mapping) | Implemented (new) | `apps/week3_attack_target_graph_dash.py` |
 | Sponsor size by outgoing edges | Implemented (new) | `apps/week3_attack_target_graph_dash.py` (`size_mode=topology`) |
 | Sponsor attack-spend in hover | Implemented (new) | `apps/week3_attack_target_graph_dash.py` |
 | Toggle size by money for sponsors/targets | Implemented (new) | `apps/week3_attack_target_graph_dash.py` (`size_mode=money`) |
-| Click sponsor -> highlight connected targets, dim others | Implemented (new) | `apps/week3_attack_target_graph_dash.py` (`interaction_mode=highlight`) |
-| Click target -> highlight connected sponsors, dim others | Implemented (new) | `apps/week3_attack_target_graph_dash.py` (`interaction_mode=highlight`) |
+| Click sponsor -> highlight connected targets, dim others | Implemented (new) | `apps/week3_attack_target_graph_dash.py` (`interaction_mode=highlight` / `accumulate`) |
+| Click target -> highlight connected sponsors, dim others | Implemented (new) | `apps/week3_attack_target_graph_dash.py` (`interaction_mode=highlight` / `accumulate`) |
+| Multi-click accumulating highlight subnetworks | Implemented (new) | `apps/week3_attack_target_graph_dash.py` (`interaction_mode=accumulate`) |
 
 ## Inputs
 - `outputs/week3/attack_target_edges_v1_1.csv`
@@ -51,8 +52,8 @@ Define and implement a richer interactive graph experience for Week 3 so users c
 
 ### 3) Color modes
 - `party` mode:
-  - `REP = #d62728` (red)
-  - `DEM = #1f77b4` (blue)
+  - sponsors: `REP = #d62728` (red), `DEM = #1f77b4` (blue)
+  - targets: configured with flipped `REP/DEM` mapping for opposed-side interpretation
   - `IND = #2ca02c`
   - `OTHER/UNKNOWN = gray`
 - `entity_label` mode:
@@ -67,13 +68,18 @@ Define and implement a richer interactive graph experience for Week 3 so users c
   - sponsor size scales by `sponsor_attack_spend`
   - target size scales by `target_received_spend`
 
-### 5) Click highlight mode
-- If interaction mode is `highlight`:
+### 5) Click highlight modes
+- `highlight` mode:
+  - single selected seed node at a time
   - clicking a sponsor highlights sponsor + outgoing targets + those edges
   - clicking a target highlights target + incoming sponsors + those edges
+  - clicking the same node again clears selection
+- `accumulate` mode:
+  - each click adds the node's neighborhood to the active highlighted subnetwork
+  - clicking an already-selected node removes it from active seeds
+- Both modes:
   - non-neighbor nodes and edges are dimmed
-- Clicking the same node again clears selection.
-- `Clear Selection` button resets highlight.
+  - `Clear Selection` resets all active seeds
 
 ## Spend Semantics
 - Spend uses `spend_proxy` from Week 1 harmonized ads.
@@ -81,13 +87,14 @@ Define and implement a richer interactive graph experience for Week 3 so users c
 - Spend totals are deduplicated at ad level before aggregation to avoid repeated counting from multiple mention rows.
 
 ## Acceptance Checks
-1. REP/DEM color mapping is correct in party mode.
+1. Sponsor REP/DEM color mapping is correct in party mode, and target color mapping follows configured flipped logic.
 2. Sponsor hover includes total attack spend.
 3. Target hover includes received attack spend.
 4. Topology size mode visibly enlarges high out-degree sponsors.
 5. Money size mode changes node sizes relative to spend.
 6. Party filters and node-type toggles change visible node/edge counts.
-7. Click highlight shows only selected neighborhood at high opacity.
+7. Highlight mode shows only selected neighborhood at high opacity.
+8. Accumulate mode adds/removes neighborhoods correctly across repeated clicks.
 
 ## Run Instructions
 From `analysis/`:

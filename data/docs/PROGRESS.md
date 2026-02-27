@@ -1,5 +1,5 @@
 # Attack-Target Network Progress
-**Last updated:** 2026-02-20
+**Last updated:** 2026-02-27
 
 ## Week 1 Prototype Status
 
@@ -161,3 +161,46 @@ Top nodes by mention count:
 3. Expand alias review beyond top 500 (toward top 2,000) to reduce `UNMAPPED` mention share.
 4. Generate refined v1.1 outputs (`edges`/`nodes`) and compare against current v1 counts for stability.
 5. Start network analytics on validated outputs (centrality, concentration, party/platform splits).
+
+## Week 3 Conservative Build + Interactive App (Current)
+
+**Status:** Complete for conservative `v1.1` data build and Dash-based interactive visualization.
+
+### Week 3 Data Artifacts Produced
+
+- `outputs/week3/entity_mentions_week3_cleaned_v1_1.csv.gz` (127,464 rows; 27 cols)
+- `outputs/week3/attack_target_edges_v1_1.csv` (570 rows; 9 cols)
+- `outputs/week3/attack_target_nodes_v1_1.csv` (346 rows; 8 cols)
+- `outputs/week3/cleaning_metrics_v1_1.csv` (26 rows; 3 cols)
+
+### Week 3 Pipeline Summary
+
+- Conservative mention cleaning applied with explicit `drop_reason`.
+- Strict target rule applied (`high` only -> `is_target_v1_1=True`).
+- Edge retention threshold enforced (`mention_count >= 2` and `ad_count >= 2`).
+
+Key metrics:
+- Week 2 target rate: `60.67%`
+- Week 3 target rate: `8.40%`
+- Week 2 edges -> Week 3 edges: `5,939 -> 570`
+- Week 2 nodes -> Week 3 nodes: `9,744 -> 346`
+
+### Week 3 Interactive App Status
+
+- App: `apps/week3_attack_target_graph_dash.py`
+- Implemented:
+  - sponsor/target party filters
+  - show/hide sponsor/target nodes
+  - party vs entity-label coloring
+  - topology vs money sizing
+  - spend-aware hover metrics
+  - neighbor highlight mode
+  - accumulate highlight mode
+
+### Week 3 Documentation Added
+
+- `data/docs/WEEK3_DATA_CLEANING_PLAN.md`
+- `data/docs/WEEK3_TARGET_CLASSIFICATION_EXPLAINER.md`
+- `data/docs/WEEK3_GRAPH_INTERACTIVITY_SPEC.md`
+- `data/docs/WEEK3_DASH_APP_GUIDE.md`
+- `data/docs/DOCS_INDEX.md`
