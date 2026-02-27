@@ -178,6 +178,7 @@ Top nodes by mention count:
 - Conservative mention cleaning applied with explicit `drop_reason`.
 - Strict target rule applied (`high` only -> `is_target_v1_1=True`).
 - Edge retention threshold enforced (`mention_count >= 2` and `ad_count >= 2`).
+- Duplicate-count guardrails applied for spend and ad-level aggregations (deduped by ad keys so repeated mentions in the same ad do not inflate spend totals).
 
 Key metrics:
 - Week 2 target rate: `60.67%`
