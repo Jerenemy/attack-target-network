@@ -326,9 +326,11 @@ def build_figure(
     size_scaled = scale_series(size_series, lo=10, hi=46).to_dict()
 
     edge_x_dim, edge_y_dim, edge_x_hi, edge_y_hi = [], [], [], []
+    edge_hover_x, edge_hover_y, edge_hover_text = [], [], []
     for u, v in graph.edges():
         x0, y0 = pos[u]
         x1, y1 = pos[v]
+        edge_meta = graph.edges[u, v]
         is_hi = (u, v) in highlight_edges
         if interaction_mode in {"highlight", "accumulate"} and has_active_selection and not is_hi:
             edge_x_dim.extend([x0, x1, None])
@@ -336,6 +338,16 @@ def build_figure(
         else:
             edge_x_hi.extend([x0, x1, None])
             edge_y_hi.extend([y0, y1, None])
+
+        # Hover anchor at edge midpoint so edge details are discoverable.
+        edge_hover_x.append((x0 + x1) / 2.0)
+        edge_hover_y.append((y0 + y1) / 2.0)
+        edge_hover_text.append(
+            f"{u} -> {v}<br>"
+            f"attacks (mention_count)={int(edge_meta.get('mention_count', 0)):,}<br>"
+            f"ads={int(edge_meta.get('ad_count', 0)):,}<br>"
+            f"attack_spend=${float(edge_meta.get('edge_attack_spend', 0.0)):,.2f}"
+        )
 
     edge_dim_trace = go.Scatter(
         x=edge_x_dim,
@@ -352,6 +364,19 @@ def build_figure(
         hoverinfo="none",
         line=dict(width=0.9, color="rgba(120,120,120,0.42)"),
         showlegend=False,
+    )
+    edge_hover_trace = go.Scatter(
+        x=edge_hover_x,
+        y=edge_hover_y,
+        mode="markers",
+        hoverinfo="text",
+        text=edge_hover_text,
+        showlegend=False,
+        marker=dict(
+            size=10,
+            color="rgba(0,0,0,0.001)",
+            line=dict(width=0),
+        ),
     )
 
     sponsor_x, sponsor_y, sponsor_size, sponsor_color, sponsor_text, sponsor_cd, sponsor_opacity = ([] for _ in range(7))
@@ -430,7 +455,7 @@ def build_figure(
     target_trace.marker.symbol = "circle"
     target_trace.marker.line = dict(width=0.9, color="#ffffff")
 
-    fig = go.Figure(data=[edge_dim_trace, edge_hi_trace, sponsor_trace, target_trace])
+    fig = go.Figure(data=[edge_dim_trace, edge_hi_trace, edge_hover_trace, sponsor_trace, target_trace])
     fig.update_layout(
         template="plotly_white",
         title=f"Week 3 Attack-Target Interactive Graph ({graph.number_of_nodes():,} nodes, {graph.number_of_edges():,} edges)",
